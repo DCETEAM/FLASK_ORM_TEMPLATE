@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -8,6 +9,9 @@ import os
 # Init db
 db = SQLAlchemy()
 
+class Config:
+    SECRET_KEY = os.getenv('SECRET_KEY', 'default_flask_secret_key')
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'default_jwt_secret_key')
 
 def create_app():
     # Load env variables
@@ -17,6 +21,8 @@ def create_app():
     app = Flask(__name__)
     # Handling CORS
     CORS(app)
+
+    app.config.from_object(Config)
 
     # Config section
     app.config["SQLALCHEMY_DATABASE_URI"] = (
@@ -32,11 +38,16 @@ def create_app():
     # Connect the db to app
     db.init_app(app)
 
+    jwt = JWTManager(app) 
+
     # Init migration
     migrate = Migrate(app, db)
 
     # Import routes
     from src.routes.dummy_routes import dummy_bp
     app.register_blueprint(dummy_bp)
+
+    with app.app_context():
+        db.create_all()
 
     return app
