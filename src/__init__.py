@@ -44,8 +44,8 @@ def create_app():
     migrate = Migrate(app, db)
 
     # Import routes
-    from src.routes.dummy_routes import dummy_bp
-    app.register_blueprint(dummy_bp)
+    from src.routes.auth_routes.auth_route import auth_bp
+    app.register_blueprint(auth_bp)
 
     with app.app_context():
         db.create_all()
