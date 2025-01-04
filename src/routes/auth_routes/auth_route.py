@@ -1,7 +1,6 @@
 from flask import Blueprint
-from src.controllers.auth_controllers.auth_controller import login_controller, register_controller
-from werkzeug.security import generate_password_hash, check_password_hash
-from src import db
+from flask_jwt_extended import jwt_required
+from src.controllers.auth_controllers.auth_controller import login_controller, register_controller, token_refresh_controller
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -15,6 +14,12 @@ def register():
 @auth_bp.route('/login', methods=['POST'])
 def login():
     return login_controller()
+
+# Token Refresh route
+@auth_bp.route('/refresh', methods=['POST'])
+@jwt_required(refresh=True)
+def token_refresh():
+    return token_refresh_controller()
 
 
 

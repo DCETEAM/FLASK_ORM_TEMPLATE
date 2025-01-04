@@ -1,10 +1,13 @@
-from datetime import timedelta
-
+import datetime
 import bcrypt
 from src import db
 from flask import jsonify, request
 from src.models.auth_models.user_model import User
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import (
+    create_access_token,
+    create_refresh_token,
+    get_jwt_identity,
+)
 
 
 def register_controller():
@@ -33,14 +36,11 @@ def register_controller():
 
     except Exception as e:
         db.session.rollback()
-        if "MySQL server has gone away" in str(e):
-            return register_controller()
-        else:
-            return (jsonify({"success": 0, "error": str(e)}), 500)
+        return (jsonify({"success": 0, "error": str(e)}), 500)
 
 
 def login_controller():
-    
+
     try:
 
         data = request.get_json()
@@ -54,9 +54,7 @@ def login_controller():
                 400,
             )
 
-        print(username, password)
         user = User.query.filter_by(username=username).first()
-        print(user)
 
         if not user or not bcrypt.checkpw(
             password.encode("utf-8"), user.password.encode("utf-8")
@@ -70,24 +68,81 @@ def login_controller():
         }
 
         # Generate JWT token
-        access_token = create_access_token(
-            identity=user.id,
-            additional_claims=additional_claims,
-            expires_delta=timedelta(days=1),
+        access_token, refresh_token = generate_tokens(identity=user.id)
+
+        user.refresh_token = refresh_token
+        user.refresh_token_created_at = datetime.datetime.utcnow()
+        db.session.commit()
+
+        return (
+            jsonify(
+                {
+                    "message": "Login successful",
+                    "access_token": access_token,
+                    "refresh_token": refresh_token,
+                    "username": user.username,
+                    "role": user.role,
+                    "status": 1,
+                }
+            ),
+            200,
         )
-        return jsonify(
-            {
-                "message": "Login successful",
-                "token": access_token,
-                "username": user.username,
-                "role": user.role,
-                "status": 1,
-            }
-        ), 200
 
     except Exception as e:
         db.session.rollback()
-        if "MySQL server has gone away" in str(e):
-            return login_controller()
-        else:
-            return (jsonify({"success": 0, "error": str(e)}), 500)
+        return (jsonify({"success": 0, "error": str(e)}), 500)
+
+
+def token_refresh_controller():
+
+    try:
+
+        refresh_token = request.headers.get("Authorization")
+        if not refresh_token or not refresh_token.startswith("Bearer "):
+            return (
+                jsonify({"message": "Refresh token missing or invalid", "status": 0}),
+                400,
+            )
+
+        refresh_token = refresh_token.split(" ")[1]
+
+        identity = get_jwt_identity()
+
+        user = User.query.filter_by(user_id=identity).first()
+        if not user:
+            return jsonify({"message": "User not found", "status": 0}), 404
+
+        if refresh_token != user.refresh_token:
+            return jsonify({"message": "Invalid refresh token", "status": 0}), 401
+
+        access_token, new_refresh_token = generate_tokens(identity)
+        user.refresh_token = new_refresh_token
+        user.token_created_at = datetime.datetime.utcnow()
+        db.session.commit()
+
+        return (
+            jsonify(
+                {
+                    "message": "Access token refreshed",
+                    "access_token": access_token,
+                    "refresh_token": new_refresh_token,
+                    "status": 1,
+                }
+            ),
+            200,
+        )
+    except Exception as e:
+        return (jsonify({"success": 0, "error": str(e)}), 500)
+
+def generate_tokens(identity, additional_claims=None, expires_delta=None):
+    access_token = create_access_token(
+        identity=identity,
+        additional_claims=additional_claims,
+        expires_delta=datetime.timedelta(seconds=30),
+    )
+
+    refresh_token = create_refresh_token(
+        identity=identity, expires_delta=datetime.timedelta(minutes=2)
+    )
+
+    return access_token, refresh_token
