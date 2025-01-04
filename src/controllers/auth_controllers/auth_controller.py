@@ -108,7 +108,7 @@ def token_refresh_controller():
 
         identity = get_jwt_identity()
 
-        user = User.query.filter_by(user_id=identity).first()
+        user = User.query.filter_by(id=identity).first()
         if not user:
             return jsonify({"message": "User not found", "status": 0}), 404
 

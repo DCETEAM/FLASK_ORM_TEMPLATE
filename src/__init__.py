@@ -1,21 +1,20 @@
-from flask import Flask, logging
+import logging
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from flask_cors import CORS
 from dotenv import load_dotenv
-import os
 from config import Config
-
-from src.routes import init_routes
-
-logging.basicConfig(level=logging.DEBUG)
+from src.middlewares.agent_check import restrict_user_agents
 
 # Init db
 db = SQLAlchemy()
 
-
 def create_app():
+    
+    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s | %(levelname)s | %(message)s")
+    
     # Load env variables
     load_dotenv(override=True)
 
@@ -24,6 +23,10 @@ def create_app():
 
     # Handling CORS
     CORS(app)
+
+    # Middlewares
+    # Agent check
+    # restrict_user_agents(app)
 
     # Configuration
     try:
@@ -47,6 +50,7 @@ def create_app():
 
     # Import routes
     try:
+        from src.routes import init_routes
         init_routes(app)
         logging.info("Routes Initialized Successfully.")
     except Exception as e:
