@@ -1,5 +1,6 @@
 from flask import request
 
+
 def dynamic_mask_routes(app):
     @app.before_request
     def mask_routes():

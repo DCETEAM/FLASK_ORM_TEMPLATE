@@ -1,12 +1,13 @@
 from flask import jsonify, request
 
 ALLOWED_USER_AGENTS = [
-    "Mozilla",   
-    "Chrome",    
-    "Safari",    
-    "Firefox",   
-    "Edge",      
+    "Mozilla",
+    "Chrome",
+    "Safari",
+    "Firefox",
+    "Edge",
 ]
+
 
 def restrict_user_agents(app):
     @app.before_request

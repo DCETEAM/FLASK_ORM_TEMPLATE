@@ -1,22 +1,22 @@
 import logging
-from flask import Flask
+from flask import Flask, current_app, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
-from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from flask_cors import CORS
 from dotenv import load_dotenv
 from config import Config
-from src.middlewares.agent_check import restrict_user_agents
+
+# from src.middlewares.agent_check import restrict_user_agents
 
 # Init db
 db = SQLAlchemy()
 
+
 def create_app():
-    
-    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s | %(levelname)s | %(message)s")
-    
-    # Load env variables
-    load_dotenv(override=True)
+
+    logging.basicConfig(
+        level=logging.DEBUG, format="%(asctime)s | %(levelname)s | %(message)s"
+    )
 
     # Create app
     app = Flask(__name__)
@@ -33,16 +33,14 @@ def create_app():
         app.config.from_object(Config)
         logging.info("Configuration Success")
     except Exception as e:
-        logging.error("Configuration Failed")
+        logging.error(f"Configuration Failed, {e}")
 
     # Connect the db to app
     try:
         db.init_app(app)
         logging.info("DB Initialized Successfully.")
     except Exception as e:
-        logging.error("DB Initialize Failed")
-
-    jwt = JWTManager(app)
+        logging.error(f"DB Initialize Failed, {e}")
 
     # Init migration
     migrate = Migrate(app, db)
@@ -50,11 +48,19 @@ def create_app():
 
     # Import routes
     try:
+
+        @app.route("/src/assets/<path:filename>")
+        def serve_static(filename):
+            return send_from_directory(
+                current_app.config["SERVE_STATIC_FOLDER"], filename
+            )
+
         from src.routes import init_routes
+
         init_routes(app)
         logging.info("Routes Initialized Successfully.")
     except Exception as e:
-        logging.error("Routes Initialize Failed")
+        logging.error(f"Routes Initialize Failed ,{e}")
 
     with app.app_context():
         db.create_all()
