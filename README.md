@@ -41,7 +41,7 @@ python -m venv venv
 ### Step 5: Activate the Virtual Environment
 #### For Git Bash or Unix-based Systems:
 ```bash
-source venv/bin/activate
+source venv/Scripts/activate
 ```
 #### For Windows Command Prompt:
 ```cmd
