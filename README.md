@@ -67,14 +67,16 @@ pip freeze > requirements.txt
 1. **Create a Database:**
    - Use tools like **XAMPP** or **WAMP** to create a new MySQL database.
 
-2. **Configure the Environment:**
+2. **Create `.env` and Configure the Environment:**
    - Update the `.env` file with your database credentials, for example:
+     
      ```env
-     DB_HOST=localhost
-     DB_USER=root
-     DB_PASSWORD=yourpassword
-     DB_NAME=yourdatabase
-     SECRET_KEY=your_secret_key
+     # Secrets
+      JWT_SECRET_KEY = 'd8d13e7f3e5c6a02c46d3f2cb4f1b4c5'
+      SECRET_KEY = 'bB@&2VbxD!yT5q!lKj*Wn?I}5M6xZ$@^'
+
+      # Database URIs
+      DATABASE_URI=mysql+pymysql://root:@localhost/db_name
      ```
 
 ---

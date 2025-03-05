@@ -2,12 +2,8 @@ import datetime
 import bcrypt
 from src import db
 from flask import jsonify, request
-from src.models.auth_models.user_model import User
-from flask_jwt_extended import (
-    create_access_token,
-    create_refresh_token,
-    get_jwt_identity,
-)
+from src.models.user_model import User
+from src.utils.jwt import decode_jwt_token, generate_jwt_token
 
 
 def register_controller():
@@ -67,8 +63,8 @@ def login_controller():
             "role": user.role,
         }
 
-        # Generate JWT token
-        access_token, refresh_token = generate_tokens(identity=user.id)
+        access_token = generate_jwt_token(user.id)
+        refresh_token = generate_jwt_token(user.id, is_refresh=True)
 
         user.refresh_token = refresh_token
         user.refresh_token_created_at = datetime.datetime.utcnow()
@@ -106,16 +102,19 @@ def token_refresh_controller():
 
         refresh_token = refresh_token.split(" ")[1]
 
-        identity = get_jwt_identity()
+        identity = decode_jwt_token(refresh_token)
 
         user = User.query.filter_by(id=identity).first()
+
         if not user:
             return jsonify({"message": "User not found", "status": 0}), 404
 
         if refresh_token != user.refresh_token:
             return jsonify({"message": "Invalid refresh token", "status": 0}), 401
 
-        access_token, new_refresh_token = generate_tokens(identity)
+        new_access_token = generate_jwt_token(user.id)
+        new_refresh_token = generate_jwt_token(user.id, is_refresh=True)
+
         user.refresh_token = new_refresh_token
         user.token_created_at = datetime.datetime.utcnow()
         db.session.commit()
@@ -124,7 +123,7 @@ def token_refresh_controller():
             jsonify(
                 {
                     "message": "Access token refreshed",
-                    "access_token": access_token,
+                    "access_token": new_access_token,
                     "refresh_token": new_refresh_token,
                     "status": 1,
                 }
@@ -133,16 +132,3 @@ def token_refresh_controller():
         )
     except Exception as e:
         return (jsonify({"success": 0, "error": str(e)}), 500)
-
-def generate_tokens(identity, additional_claims=None, expires_delta=None):
-    access_token = create_access_token(
-        identity=identity,
-        additional_claims=additional_claims,
-        expires_delta=datetime.timedelta(seconds=30),
-    )
-
-    refresh_token = create_refresh_token(
-        identity=identity, expires_delta=datetime.timedelta(minutes=2)
-    )
-
-    return access_token, refresh_token

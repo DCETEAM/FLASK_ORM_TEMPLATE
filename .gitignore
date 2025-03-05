@@ -33,7 +33,7 @@ instance/config.py
 *.sqlite
 
 # Environment variables
-# .env
+.env
 
 # macOS system files
 .DS_Store
