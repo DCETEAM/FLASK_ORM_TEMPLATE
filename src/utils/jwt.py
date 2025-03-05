@@ -4,8 +4,8 @@ import datetime
 import bcrypt
 from functools import wraps
 
-SECRET_KEY = current_app.config["SECRET_KEY"]
-ALGORITHM = current_app.config["ALGORITHM"]
+SECRET_KEY = 'bB@&2VbxD!yT5q!lKj*Wn?I}5M6xZ$@^'
+ALGORITHM = "HS256"
 
 
 def generate_jwt_token(userid, is_refresh=False):

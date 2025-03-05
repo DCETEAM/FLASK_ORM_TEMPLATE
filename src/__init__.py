@@ -3,7 +3,6 @@ from flask import Flask, current_app, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_cors import CORS
-from dotenv import load_dotenv
 from config import Config
 
 # from src.middlewares.agent_check import restrict_user_agents
